@@ -59,13 +59,17 @@ s=b.getElementsByTagName(e)[0];
 s.parentNode.insertBefore(t,s);
 }(window, document,'script');
 
-fbq('init', '1595671901917548');
-fbq('track', 'PageView');
+fbq('init', '1695130584911579');
+fbq('init', '1745711483408208');
+fbq('trackSingle', '1695130584911579', 'PageView');
+fbq('trackSingle', '1745711483408208', 'PageView');
 </script>
 
 <noscript>
 <img height="1" width="1" style="display:none"
-src="https://www.facebook.com/tr?id=1595671901917548&ev=PageView&noscript=1"/>
+src="https://www.facebook.com/tr?id=1695130584911579&ev=PageView&noscript=1"/>
+<img height="1" width="1" style="display:none"
+src="https://www.facebook.com/tr?id=1745711483408208&ev=PageView&noscript=1"/>
 </noscript>
 
 </head>
@@ -87,7 +91,9 @@ if (!verifiedPayment?.verified) {
 } else {
     localStorage.removeItem("nexshop_cart");
     if (!sessionStorage.getItem("purchase_tracked")) {
-        fbq('track', 'Purchase', { value: Number(verifiedPayment.amount) || 0, currency: verifiedPayment.currency || 'INR', content_type: 'product', content_ids: [verifiedPayment.reference || verifiedPayment.paymentId], num_items: 1 });
+        const purchase = { value: Number(verifiedPayment.amount) || 0, currency: verifiedPayment.currency || 'INR', content_type: 'product', content_ids: [verifiedPayment.reference || verifiedPayment.paymentId], num_items: 1 };
+        fbq('trackSingle', '1695130584911579', 'Purchase', purchase);
+        fbq('trackSingle', '1745711483408208', 'Purchase', purchase);
         sessionStorage.setItem("purchase_tracked", "true");
     }
 }
