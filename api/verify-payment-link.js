@@ -14,10 +14,11 @@ module.exports = async (req, res) => {
     return sendJson(res, 202, { verified: true, status: "pending", payment_link_status: paymentLinkStatus });
   } catch (error) {
     const upstreamStatus = Number(error?.statusCode || 0);
+    const paymentCode = String(error?.paymentCode || "PAYMENT_UNAVAILABLE");
     // Razorpay can expose a signed return before its capture state is visible
     // to the verification API. Keep polling; never convert this into success.
     if (upstreamStatus === 400 || upstreamStatus === 503) {
-      console.warn("Razorpay Payment Link verification is pending", { upstreamStatus });
+      console.warn("Razorpay Payment Link verification is pending", { upstreamStatus, paymentCode });
       return sendJson(res, 202, { verified: false, status: "pending" });
     }
     console.error("Razorpay Payment Link verification error", error);
