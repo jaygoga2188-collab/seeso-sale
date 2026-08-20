@@ -1,2 +1,59 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1"><meta name="theme-color" content="#9f2089"><meta name="robots" content="noindex,nofollow"><title>Verifying payment</title><style>*{box-sizing:border-box}body{margin:0;min-height:100vh;padding:20px 14px;display:grid;place-items:center;background:#f6f7fb;font-family:Arial,sans-serif;color:#172033}.card{width:min(100%,360px);padding:40px 28px;border-radius:16px;background:#fff;text-align:center;box-shadow:0 10px 35px #0002}.spinner{width:52px;height:52px;margin:0 auto 22px;border:6px solid #f0dced;border-top-color:#9f2089;border-radius:50%;animation:spin .8s linear infinite}h1{margin:0;font-size:22px}p{margin:10px auto 0;max-width:290px;color:#667085;font-size:14px;line-height:1.55}.action{display:none;width:100%;min-height:48px;margin-top:22px;border:0;border-radius:8px;background:#9f2089;color:#fff;font-weight:700;cursor:pointer}@keyframes spin{to{transform:rotate(360deg)}}</style></head><body><main class="card"><div class="spinner" id="spinner"></div><h1 id="title">Verifying your payment</h1><p id="message">Please wait. Do not close or refresh this page.</p><button class="action" id="retry" type="button">Check payment again</button></main><script>const title=document.getElementById("title"),message=document.getElementById("message"),spinner=document.getElementById("spinner"),retry=document.getElementById("retry"),callback=Object.fromEntries(new URLSearchParams(location.search));let attempt=null;try{attempt=JSON.parse(sessionStorage.getItem("upi_payment_attempt")||"null")}catch(_){attempt=null}const failed=()=>location.replace("/failed.html");async function verify(attempts=6){retry.style.display="none";spinner.style.display="block";title.textContent="Verifying your payment";message.textContent="Please wait. Do not close or refresh this page.";if(!attempt?.paymentLinkId||callback.razorpay_payment_link_id!==attempt.paymentLinkId||callback.razorpay_payment_link_reference_id!==attempt.reference){failed();return}for(let i=0;i<attempts;i+=1){try{const response=await fetch("/api/verify-payment-link",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(callback)}),result=await response.json().catch(()=>({}));if(response.ok&&result.verified&&result.status==="success"){sessionStorage.setItem("upi_order_reference",result.payment_id);sessionStorage.setItem("razorpay_verified_payment",JSON.stringify({verified:true,paymentId:result.payment_id,paymentLinkId:result.payment_link_id,reference:result.reference_id,amount:Number(result.amount)||0,currency:result.currency||"INR",verifiedAt:Date.now()}));sessionStorage.removeItem("razorpay_payment_failure");location.replace("/success.html");return}if(response.status!==202){failed();return}}catch(_){if(i===attempts-1)break}if(i<attempts-1)await new Promise(resolve=>setTimeout(resolve,1500))}spinner.style.display="none";title.textContent="Payment confirmation pending";message.textContent="Your payment is not marked successful yet. Please check again in a few seconds.";retry.style.display="block"}retry.addEventListener("click",()=>verify());verify();</script></body></html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1">
+    <meta name="theme-color" content="#9f2089">
+    <meta name="robots" content="noindex,nofollow">
+    <title>Verifying payment</title>
+    <style>
+      *{box-sizing:border-box}body{margin:0;min-height:100vh;padding:20px 14px;display:grid;place-items:center;background:#f6f7fb;font-family:Arial,sans-serif;color:#172033}.card{width:min(100%,360px);padding:40px 28px;border-radius:16px;background:#fff;text-align:center;box-shadow:0 10px 35px #0002}.spinner{width:52px;height:52px;margin:0 auto 22px;border:6px solid #f0dced;border-top-color:#9f2089;border-radius:50%;animation:spin .8s linear infinite}h1{margin:0;font-size:22px}p{margin:10px auto 0;max-width:290px;color:#667085;font-size:14px;line-height:1.55}.action{display:none;width:100%;min-height:48px;margin-top:22px;border:0;border-radius:8px;background:#9f2089;color:#fff;font-weight:700;cursor:pointer}@keyframes spin{to{transform:rotate(360deg)}}
+    </style>
+  </head>
+  <body>
+    <main class="card">
+      <div class="spinner" id="spinner"></div>
+      <h1 id="title">Verifying your payment</h1>
+      <p id="message">Please wait. Do not close or refresh this page.</p>
+      <button class="action" id="retry" type="button">Check payment again</button>
+    </main>
+    <script>
+      const title = document.getElementById("title");
+      const message = document.getElementById("message");
+      const spinner = document.getElementById("spinner");
+      const retry = document.getElementById("retry");
+      const callback = Object.fromEntries(new URLSearchParams(location.search));
+      const failed = () => location.replace("/failed.html");
+      const validCallback = () => (
+        /^pay_[A-Za-z0-9]+$/.test(callback.razorpay_payment_id || "") &&
+        /^plink_[A-Za-z0-9]+$/.test(callback.razorpay_payment_link_id || "") &&
+        /^MSO[A-Za-z0-9]+$/.test(callback.razorpay_payment_link_reference_id || "") &&
+        callback.razorpay_payment_link_status === "paid" &&
+        /^[a-f0-9]{64}$/i.test(callback.razorpay_signature || "")
+      );
+      async function verify(attempts = 6) {
+        retry.style.display = "none"; spinner.style.display = "block";
+        title.textContent = "Verifying your payment";
+        message.textContent = "Please wait. Do not close or refresh this page.";
+        if (!validCallback()) { failed(); return; }
+        for (let index = 0; index < attempts; index += 1) {
+          try {
+            const response = await fetch("/api/verify-payment-link", {method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(callback)});
+            const result = await response.json().catch(() => ({}));
+            if (response.ok && result.verified && result.status === "success") {
+              sessionStorage.setItem("upi_order_reference", result.payment_id);
+              sessionStorage.setItem("razorpay_verified_payment", JSON.stringify({verified:true,paymentId:result.payment_id,paymentLinkId:result.payment_link_id,reference:result.reference_id,amount:Number(result.amount)||0,currency:result.currency||"INR",verifiedAt:Date.now()}));
+              sessionStorage.removeItem("razorpay_payment_failure"); location.replace("/success.html"); return;
+            }
+            if (response.status !== 202) { failed(); return; }
+          } catch (_) { if (index === attempts - 1) break; }
+          if (index < attempts - 1) await new Promise((resolve) => setTimeout(resolve, 1500));
+        }
+        spinner.style.display = "none"; title.textContent = "Payment confirmation pending";
+        message.textContent = "Your payment is not marked successful yet. Please check again in a few seconds.";
+        retry.style.display = "block";
+      }
+      retry.addEventListener("click", () => verify()); verify();
+    </script>
+  </body>
+</html>
