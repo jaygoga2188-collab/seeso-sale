@@ -31,7 +31,7 @@
         callback.razorpay_payment_link_status === "paid" &&
         /^[a-f0-9]{64}$/i.test(callback.razorpay_signature || "")
       );
-      async function verify(attempts = 6) {
+      async function verify(attempts = 15) {
         retry.style.display = "none"; spinner.style.display = "block";
         title.textContent = "Verifying your payment";
         message.textContent = "Please wait. Do not close or refresh this page.";
@@ -47,7 +47,7 @@
             }
             if (response.status !== 202) { failed(); return; }
           } catch (_) { if (index === attempts - 1) break; }
-          if (index < attempts - 1) await new Promise((resolve) => setTimeout(resolve, 1500));
+          if (index < attempts - 1) await new Promise((resolve) => setTimeout(resolve, 2000));
         }
         spinner.style.display = "none"; title.textContent = "Payment confirmation pending";
         message.textContent = "Your payment is not marked successful yet. Please check again in a few seconds.";

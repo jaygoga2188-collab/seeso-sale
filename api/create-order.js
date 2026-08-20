@@ -38,7 +38,7 @@ module.exports = async (req, res) => {
     const paymentLink = await paymentMasterRequest("/api/payment/create-order", {
       amount: orderTotal.amountPaise, currency: "INR", internal_order_id: internalReference, kind: "payment_link",
       description: String(process.env.PAYMENT_DESCRIPTION || "Order Payment").trim().slice(0, 255) || "Order Payment",
-      expire_by: Math.floor(Date.now() / 1000) + 1800, callback_url: `${getSiteUrl()}/payment-return.html`,
+      expire_by: Math.floor(Date.now() / 1000) + 1800, callback_url: `${getSiteUrl()}/payment-return.html?v=2`,
       customer: { name: String(customer.name || "Customer").trim().slice(0, 80) || "Customer", contact: phone },
     });
     const hostedUrl = new URL(paymentLink.payment_link);
