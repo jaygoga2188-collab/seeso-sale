@@ -12905,7 +12905,7 @@ const gs = [
     {
       id: 1,
       name: "Premium 4KG Mix Dry Fruits Combo – Almonds, Cashews, Pistachios & Kishmish (1KG Each)",
-      sellPrice: "₹1.00",
+      sellPrice: "₹199.00",
       mrpPrice: "₹5,999.00",
       offPercent: "97% off",
       rating: "3.9",
