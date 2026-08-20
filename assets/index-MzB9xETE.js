@@ -14758,6 +14758,14 @@ function ym({ cartItems: f }) {
         if (!response.ok || !order.payment_link) {
           throw new Error(order.error || "Unable to start payment.");
         }
+        if (!order.payment_link_id || !order.transaction_reference) {
+          throw new Error("Unable to prepare secure payment.");
+        }
+        sessionStorage.setItem("upi_payment_attempt", JSON.stringify({
+          paymentLinkId: order.payment_link_id,
+          reference: order.transaction_reference,
+          createdAt: Date.now(),
+        }));
         window.location.assign(order.payment_link);
       } catch (err) {
         console.error(err);
