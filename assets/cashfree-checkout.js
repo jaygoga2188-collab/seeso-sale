@@ -13,20 +13,18 @@
     const previousText = button ? button.textContent : "";
     if (button) {
       button.disabled = true;
-      button.textContent = "Opening PhonePe…";
+      button.textContent = "Opening secure payment…";
     }
     try {
-      const response = await fetch("/api/create-direct-upi", {
+      const response = await fetch("/api/create-order", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ items, customer }),
       });
       const result = await response.json();
-      if (!response.ok || !result.links?.phonepe || !result.reference) throw new Error(result.error || "Unable to start payment.");
-      sessionStorage.setItem("upi_payment_attempt", JSON.stringify({ reference: result.reference, gateway: "direct_upi_phonepe", amount: Number(result.amount) || 0, currency: result.currency || "INR", startedAt: Date.now() }));
-      const target = /Android/i.test(navigator.userAgent) ? result.links.phonepe : result.links.phonepeFallback;
-      if (!target) throw new Error("PhonePe link is unavailable.");
-      window.location.assign(target);
+      if (!response.ok || !result.payment_link || !result.payment_link_id || !result.transaction_reference) throw new Error(result.error || "Unable to start payment.");
+      sessionStorage.setItem("upi_payment_attempt", JSON.stringify({ reference: result.transaction_reference, paymentLinkId: result.payment_link_id, amount: Number(result.amount) || 0, currency: result.currency || "INR", startedAt: Date.now() }));
+      window.location.assign(result.payment_link);
     } catch (error) {
       alert(error.message || "Unable to start payment. Please try again.");
       if (button) {
@@ -46,7 +44,7 @@
     document.head.appendChild(style);
     const card = document.createElement("section");
     card.className = "cashfree-hosted-checkout";
-    card.innerHTML = `<div class="cashfree-card"><div class="cashfree-lock">🔒</div><h2>Secure payment</h2><p>Continue to PhonePe to complete your UPI payment securely.</p><button class="cashfree-start-button">Proceed to secure payment</button><p class="cashfree-note">Payments are processed securely through UPI.</p></div>`;
+    card.innerHTML = `<div class="cashfree-card"><div class="cashfree-lock">🔒</div><h2>Secure payment</h2><p>Choose UPI, card, net banking, or wallet securely on Razorpay's payment page.</p><button class="cashfree-start-button">Proceed to secure payment</button><p class="cashfree-note">Payments are processed securely by Razorpay.</p></div>`;
     page.appendChild(card);
     card.querySelector("button").addEventListener("click", (event) => pay(event.currentTarget));
   }
